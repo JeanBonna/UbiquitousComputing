@@ -5,32 +5,49 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
 
-func InitDb() error {
+func InitDB() error {
+	// Get database URL from environment variable
 	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// Fallback to individual environment variables
+		host := getEnv("DB_HOST", "localhost")
+		port := getEnv("DB_PORT", "5432")
+		user := getEnv("DB_USER", "postgres")
+		password := getEnv("DB_PASSWORD", "postgres")
+		dbname := getEnv("DB_NAME", "usersdb")
+
+		databaseURL = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			host, port, user, password, dbname)
+	}
 
 	var err error
 	DB, err = sql.Open("postgres", databaseURL)
 	if err != nil {
-		return fmt.Errorf("error connecting to database: %w", err)
+		return fmt.Errorf("error opening database: %w", err)
 	}
 
+	// Test the connection
 	if err = DB.Ping(); err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	log.Println("Database connection established successfully")
 
-	if err = createUserTable(); err != nil {
-		return fmt.Errorf("error creaating users table: %w", err)
+	// Create table if not exists
+	if err = createUsersTable(); err != nil {
+		return fmt.Errorf("error creating users table: %w", err)
 	}
+
 	return nil
 }
 
-func createUserTable() error {
+func createUsersTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
@@ -47,8 +64,16 @@ func createUserTable() error {
 		return err
 	}
 
-	log.Println(("Users table created or already exists"))
+	log.Println("Users table created or already exists")
 	return nil
+}
+
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
 
 func CloseDB() error {

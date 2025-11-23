@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert some initial data
+-- Insert initial data
 INSERT INTO users (name, email, username, password) VALUES
     ('Alice Ferreira', 'alice.ferreira@example.com', 'alicef', 'senha123'),
     ('Bruno Martins', 'bruno.martins@example.com', 'brunom', '12345678'),
@@ -18,6 +18,6 @@ INSERT INTO users (name, email, username, password) VALUES
     ('Eduarda Rocha', 'eduarda.rocha@example.com', 'edurocha', 'senhaSegura!')
 ON CONFLICT (email) DO NOTHING;
 
--- Create index for better performance
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

@@ -23,83 +23,68 @@ CB_COOLDOWN_SEC = int(os.getenv("CB_COOLDOWN_SEC", "10"))
 app = FastAPI(title="Golang API Gateway", docs_url="/_docs")
 
 # Rate limit (per IP)
-_recent = defaultdict(deque)  # ip -> timestamps
+_recent = defaultdict(deque)
 _window = timedelta(seconds=WINDOW_SEC)
 
 # Round-robin
 _rr = itertools.cycle(range(len(UPSTREAMS)))
 
 # Circuit breaker per upstream
-# state: "closed" | "open" | "half"
 _cb = {
     i: {"state": "closed", "fail": 0, "opened_at": 0.0}
     for i in range(len(UPSTREAMS))
 }
 
 def _client_ip(req: Request) -> str:
-    """Extract client IP from request"""
     fwd = req.headers.get("x-forwarded-for")
     if fwd:
         return fwd.split(",")[0].strip()
     return req.client.host or "?"
 
 def _rate_limit(ip: str) -> bool:
-    """Check if IP has exceeded rate limit"""
     now = datetime.utcnow()
     q = _recent[ip]
     
-    # Remove old timestamps outside the window
     while q and (now - q[0]) > _window:
         q.popleft()
     
-    # Check if limit exceeded
     if len(q) >= RATE_LIMIT:
         return True
     
-    # Add current timestamp
     q.append(now)
     return False
 
 def _pick_upstream_index() -> int:
-    """Pick next upstream using round-robin, respecting circuit breaker state"""
-    # Keep picking until one is not OPEN (allow half/closed)
     for _ in range(len(UPSTREAMS)):
         i = next(_rr)
         st = _cb[i]
         
         if st["state"] == "open":
-            # Allow half-open if cooldown passed
             if (time.time() - st["opened_at"]) >= CB_COOLDOWN_SEC:
                 st["state"] = "half"
                 return i
-            # else skip
             continue
         
         return i
     
-    # If all open and still cooling, raise error
     raise HTTPException(
         status_code=503, 
         detail="No healthy upstreams (circuit open)"
     )
 
 def _on_success(i: int):
-    """Mark upstream as successful"""
     st = _cb[i]
     st["fail"] = 0
     st["state"] = "closed"
 
 def _on_failure(i: int):
-    """Mark upstream as failed and update circuit breaker"""
     st = _cb[i]
     st["fail"] += 1
     
-    # Open circuit if in half-open state or threshold reached
     if st["state"] == "half" or st["fail"] >= CB_FAIL_THRESHOLD:
         st["state"] = "open"
         st["opened_at"] = time.time()
 
-# Hop-by-hop headers that should not be forwarded
 HOP = {
     "connection", "keep-alive", "proxy-authenticate", 
     "proxy-authorization", "te", "trailers", 
@@ -108,7 +93,6 @@ HOP = {
 
 @app.middleware("http")
 async def limit(req: Request, call_next):
-    """Rate limiting middleware"""
     if _rate_limit(_client_ip(req)):
         raise HTTPException(
             status_code=429, 
@@ -121,20 +105,14 @@ async def limit(req: Request, call_next):
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 )
 async def proxy(req: Request, path: str):
-    """Main proxy endpoint - forwards requests to upstreams"""
-    # Pick upstream
     i = _pick_upstream_index()
     upstream = UPSTREAMS[i]
     
-    # Build URL
     url = f"{upstream}/" + (path or "")
     if req.url.query:
         url += f"?{req.url.query}"
     
-    # Read request body
     body = await req.body()
-    
-    # Filter hop-by-hop headers
     headers = {k: v for k, v in req.headers.items() if k.lower() not in HOP}
     
     try:
@@ -152,13 +130,11 @@ async def proxy(req: Request, path: str):
             detail=f"Bad gateway (upstream error): {str(e)}"
         )
     
-    # Treat 500+ as failure for circuit breaker
     if r.status_code >= 500:
         _on_failure(i)
     else:
         _on_success(i)
     
-    # Filter response headers
     resp_headers = {k: v for k, v in r.headers.items() if k.lower() not in HOP}
     
     return Response(
@@ -170,7 +146,6 @@ async def proxy(req: Request, path: str):
 
 @app.get("/_health")
 def health():
-    """Health check endpoint - shows gateway status"""
     return {
         "upstreams": UPSTREAMS,
         "circuit_breakers": _cb,
@@ -181,7 +156,6 @@ def health():
 
 @app.get("/_metrics")
 def metrics():
-    """Metrics endpoint - shows detailed statistics"""
     active_clients = len(_recent)
     total_requests = sum(len(q) for q in _recent.values())
     
