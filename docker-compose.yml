@@ -21,12 +21,12 @@ services:
     networks:
       - app-network
 
-  # API Golang
-  golang-api:
+  # API Golang - Instância 1
+  golang-api-1:
     build:
       context: ./GolangApi
       dockerfile: Dockerfile
-    container_name: golang-api
+    container_name: golang-api-1
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
       PORT: 8080
@@ -41,12 +41,52 @@ services:
       - app-network
     restart: unless-stopped
 
-  # API Node.js - DESCOMENTAR quando seu colega terminar
-  node-api:
+  # API Golang - Instância 2
+  golang-api-2:
+    build:
+      context: ./GolangApi
+      dockerfile: Dockerfile
+    container_name: golang-api-2
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 8080
+    env_file:
+      - .env
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # API Golang - Instância 3
+  golang-api-3:
+    build:
+      context: ./GolangApi
+      dockerfile: Dockerfile
+    container_name: golang-api-3
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 8080
+    env_file:
+      - .env
+    ports:
+      - "8083:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # API Node.js - Instância 1
+  node-api-1:
     build:
       context: ./NodeApi
       dockerfile: Dockerfile
-    container_name: node-api
+    container_name: node-api-1
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
       PORT: 3000
@@ -61,6 +101,46 @@ services:
       - app-network
     restart: unless-stopped
 
+  # API Node.js - Instância 2
+  node-api-2:
+    build:
+      context: ./NodeApi
+      dockerfile: Dockerfile
+    container_name: node-api-2
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 3000
+    env_file:
+      - .env
+    ports:
+      - "3002:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # API Node.js - Instância 3
+  node-api-3:
+    build:
+      context: ./NodeApi
+      dockerfile: Dockerfile
+    container_name: node-api-3
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 3000
+    env_file:
+      - .env
+    ports:
+      - "3003:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
   # Gateway com Load Balancer
   gateway:
     build:
@@ -68,7 +148,8 @@ services:
       dockerfile: Dockerfile
     container_name: api-gateway
     environment:
-      UPSTREAMS: http://golang-api:8080,http://node-api:3000
+      # 3 instâncias Golang + 3 instâncias Node
+      UPSTREAMS: http://golang-api-1:8080,http://golang-api-2:8080,http://golang-api-3:8080,http://node-api-1:3000,http://node-api-2:3000,http://node-api-3:3000
       RATE_LIMIT: ${RATE_LIMIT:-30}
       WINDOW_SEC: ${WINDOW_SEC:-60}
       CB_FAIL_THRESHOLD: ${CB_FAIL_THRESHOLD:-3}
@@ -77,8 +158,12 @@ services:
     ports:
       - "8080:8000"
     depends_on:
-      - golang-api
-      - node-api
+      - golang-api-1
+      - golang-api-2
+      - golang-api-3
+      - node-api-1
+      - node-api-2
+      - node-api-3
     networks:
       - app-network
     restart: unless-stopped
