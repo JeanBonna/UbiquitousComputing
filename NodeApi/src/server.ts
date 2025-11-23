@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // Rotas
 app.use('/', userRoutes);
 
-// Rota de health check
+// Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'healthy',

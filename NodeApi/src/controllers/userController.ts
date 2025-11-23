@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 
 export class UserController {
-  // POST /users - Criar usuário
+  // POST /users - cria usuário
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { name, email, username, password } = req.body;
@@ -26,7 +26,7 @@ export class UserController {
     }
   }
 
-  // GET /users - Listar todos os usuários
+  // GET /users - busca todos os usuários
   async list(req: Request, res: Response): Promise<void> {
     try {
       const users = await User.findAll({
@@ -39,7 +39,7 @@ export class UserController {
     }
   }
 
-  // GET /users/:id - Buscar usuário por ID
+  // GET /users/:id - busca usuario por ID
   async getById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -57,7 +57,7 @@ export class UserController {
     }
   }
 
-  // PUT /users/:id - Atualizar usuário
+  // PUT /users/:id - atualiza usuario
   async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -88,7 +88,7 @@ export class UserController {
     }
   }
 
-  // DELETE /users/:id - Deletar usuário
+  // DELETE /users/:id - deleta usuario baseado no ID
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

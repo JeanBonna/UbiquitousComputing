@@ -9,7 +9,7 @@ import (
 	"GolangApi/models"
 )
 
-// GetUsers - Lista todos os usuários
+// GetUsers: lista usuarios
 func GetUsers(c *gin.Context) {
 	query := `SELECT id, name, email, username, password, created_at, updated_at FROM users ORDER BY id`
 	rows, err := database.DB.Query(query)
@@ -41,7 +41,7 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUserByID - Busca usuário por ID
+// GetUserByID - busca usuario por id
 func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 	query := `SELECT id, name, email, username, password, created_at, updated_at FROM users WHERE id = $1`
@@ -65,7 +65,7 @@ func GetUserByID(c *gin.Context) {
 }
 
 
-// CreateUser - Cria um novo usuário
+// CreateUser - cria um usuário
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -83,7 +83,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
-// UpdateUser - Atualiza um usuário existente
+// UpdateUser - atualiza um usuario
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
@@ -105,13 +105,12 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Buscar usuário atualizado
 	userID, _ := strconv.Atoi(id)
 	user.ID = userID
 	c.JSON(http.StatusOK, user)
 }
 
-// DeleteUser - Deleta um usuário
+// DeleteUser - deleta um usuário
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	query := `DELETE FROM users WHERE id = $1`

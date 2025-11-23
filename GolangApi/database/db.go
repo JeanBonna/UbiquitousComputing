@@ -12,10 +12,8 @@ import (
 var DB *sql.DB
 
 func InitDB() error {
-	// Get database URL from environment variable
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		// Fallback to individual environment variables
 		host := getEnv("DB_HOST", "localhost")
 		port := getEnv("DB_PORT", "5432")
 		user := getEnv("DB_USER", "postgres")
@@ -32,14 +30,12 @@ func InitDB() error {
 		return fmt.Errorf("error opening database: %w", err)
 	}
 
-	// Test the connection
 	if err = DB.Ping(); err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	log.Println("Database connection established successfully")
 
-	// Create table if not exists
 	if err = createUsersTable(); err != nil {
 		return fmt.Errorf("error creating users table: %w", err)
 	}

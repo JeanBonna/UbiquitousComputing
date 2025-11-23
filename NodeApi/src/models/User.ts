@@ -57,9 +57,9 @@ User.init(
     sequelize,
     tableName: 'users',
     timestamps: true,
-    createdAt: 'created_at',  // Mapeia para created_at
-    updatedAt: 'updated_at',  // Mapeia para updated_at
-    underscored: false,       // Não converte automaticamente
+    createdAt: 'created_at',  
+    updatedAt: 'updated_at',  
+    underscored: false,
   }
 );
 
