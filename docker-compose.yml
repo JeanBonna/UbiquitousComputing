@@ -1,0 +1,91 @@
+services:
+  db:
+    image: postgres:15
+    container_name: users-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-usersdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-usersdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # API Golang
+  golang-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: golang-api
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 8080
+    env_file:
+      - .env
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # API Node.js - DESCOMENTAR quando implementar
+  # node-api:
+  #   build:
+  #     context: ./NodeApi
+  #     dockerfile: Dockerfile
+  #   container_name: node-api
+  #   environment:
+  #     DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+  #     PORT: 3000
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "3001:3000"
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
+
+  # Gateway com Load Balancer
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      # Quando NodeAPI estiver pronta, adicionar: ,http://node-api:3000
+      UPSTREAMS: http://golang-api:8080
+      RATE_LIMIT: ${RATE_LIMIT:-30}
+      WINDOW_SEC: ${WINDOW_SEC:-60}
+      CB_FAIL_THRESHOLD: ${CB_FAIL_THRESHOLD:-3}
+      CB_COOLDOWN_SEC: ${CB_COOLDOWN_SEC:-10}
+      PORT: 8000
+    ports:
+      - "8080:8000"
+    depends_on:
+      - golang-api
+      # Descomentar quando NodeAPI estiver pronta:
+      # - node-api
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge
