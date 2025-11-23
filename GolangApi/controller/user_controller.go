@@ -9,9 +9,9 @@ import (
 	"GolangApi/models"
 )
 
-// GetAllUsers - Lista todos os usuários
+// GetUsers - Lista todos os usuários
 func GetUsers(c *gin.Context) {
-	query := `SELECT id, name, email, username FROM users ORDER BY id`
+	query := `SELECT id, name, email, username, password, created_at, updated_at FROM users ORDER BY id`
 	rows, err := database.DB.Query(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuários"})
@@ -22,7 +22,15 @@ func GetUsers(c *gin.Context) {
 	var users []models.User
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Username)
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Username,
+			&user.Password,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao processar usuários"})
 			return
@@ -36,10 +44,18 @@ func GetUsers(c *gin.Context) {
 // GetUserByID - Busca usuário por ID
 func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
-	query := `SELECT id, name, email, username FROM users WHERE id = $1`
+	query := `SELECT id, name, email, username, password, created_at, updated_at FROM users WHERE id = $1`
 
 	var user models.User
-	err := database.DB.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Email, &user.Username)
+	err := database.DB.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Username,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
 		return
@@ -47,6 +63,7 @@ func GetUserByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
 
 // CreateUser - Cria um novo usuário
 func CreateUser(c *gin.Context) {
