@@ -42,24 +42,24 @@ services:
     restart: unless-stopped
 
   # API Node.js - DESCOMENTAR quando seu colega terminar
-  # node-api:
-  #   build:
-  #     context: ./NodeApi
-  #     dockerfile: Dockerfile
-  #   container_name: node-api
-  #   environment:
-  #     DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
-  #     PORT: 3000
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "3001:3000"
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  node-api:
+    build:
+      context: ./NodeApi
+      dockerfile: Dockerfile
+    container_name: node-api
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-usersdb}?sslmode=disable
+      PORT: 3000
+    env_file:
+      - .env
+    ports:
+      - "3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
 
   # Gateway com Load Balancer
   gateway:
@@ -68,8 +68,7 @@ services:
       dockerfile: Dockerfile
     container_name: api-gateway
     environment:
-      # Quando NodeAPI estiver pronta, adicionar: ,http://node-api:3000
-      UPSTREAMS: http://golang-api:8080
+      UPSTREAMS: http://golang-api:8080,http://node-api:3000
       RATE_LIMIT: ${RATE_LIMIT:-30}
       WINDOW_SEC: ${WINDOW_SEC:-60}
       CB_FAIL_THRESHOLD: ${CB_FAIL_THRESHOLD:-3}
@@ -79,8 +78,7 @@ services:
       - "8080:8000"
     depends_on:
       - golang-api
-      # Descomentar quando NodeAPI estiver pronta:
-      # - node-api
+      - node-api
     networks:
       - app-network
     restart: unless-stopped

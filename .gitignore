@@ -1,0 +1,120 @@
+# ====================
+# Node.js
+# ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+*.log
+
+# ====================
+# Go
+# ====================
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+vendor/
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+go.work
+go.work.sum
+
+# ====================
+# Python (Gateway)
+# ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# ====================
+# Ambientes e Configuração
+# ====================
+# .env
+# .env.local
+# .env.*.local
+# *.env
+
+# ====================
+# IDEs e Editores
+# ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.classpath
+.settings/
+
+# ====================
+# Docker
+# ====================
+docker-compose.override.yml
+*.pid
+
+# ====================
+# Build outputs
+# ====================
+dist/
+build/
+out/
+target/
+tmp/
+temp/
+
+# ====================
+# Logs e Databases locais
+# ====================
+*.log
+*.sqlite
+*.db
+
+# ====================
+# OS
+# ====================
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ====================
+# Compilados TypeScript
+# ====================
+*.tsbuildinfo
+
+# ====================
+# Coverage e Testes
+# ====================
+coverage/
+.nyc_output/
+*.lcov
+
+# ====================
+# JMeter (Testes de Performance)
+# ====================
+*.jmx.bak
+jmeter.log
+*.jtl
+*.csv
+results/

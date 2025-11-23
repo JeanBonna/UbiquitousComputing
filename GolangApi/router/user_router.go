@@ -10,7 +10,10 @@ func StartRouter() {
 	router := gin.Default()
 
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "healthy"})
+		c.JSON(200, gin.H{
+			"status": "healthy",
+			"service": "Go Users API",
+		})
 	})
 
 	router.GET("/users", controller.GetUsers)

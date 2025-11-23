@@ -1,19 +1,20 @@
 package controller
 
 import (
-	"GolangApi/database"
-	"GolangApi/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"GolangApi/database"
+	"GolangApi/models"
 )
 
+// GetAllUsers - Lista todos os usuários
 func GetUsers(c *gin.Context) {
-	query := "SELECT id, name, email, username FROM users ORDER BY id"
+	query := `SELECT id, name, email, username FROM users ORDER BY id`
 	rows, err := database.DB.Query(query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuários"})
 		return
 	}
 	defer rows.Close()
@@ -21,35 +22,33 @@ func GetUsers(c *gin.Context) {
 	var users []models.User
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.User)
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Username)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning users"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao processar usuários"})
 			return
 		}
 		users = append(users, user)
 	}
+
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUserByID - Busca usuário por ID
 func GetUserByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	id := c.Param("id")
+	query := `SELECT id, name, email, username FROM users WHERE id = $1`
 
 	var user models.User
-	query := "SELECT id, name, email, username FROM users WHERE id = $1"
-	err = database.DB.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Email, &user.User)
-
+	err := database.DB.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Email, &user.Username)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
 		return
 	}
 
 	c.JSON(http.StatusOK, user)
 }
 
+// CreateUser - Cria um novo usuário
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -57,69 +56,60 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	query := "INSERT INTO users (name, email, username, password) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := database.DB.QueryRow(query, user.Name, user.Email, user.User, user.Password).Scan(&user.ID)
-
+	query := `INSERT INTO users (name, email, username, password) VALUES ($1, $2, $3, $4) RETURNING id`
+	err := database.DB.QueryRow(query, user.Name, user.Email, user.Username, user.Password).Scan(&user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao criar usuário"})
 		return
 	}
 
-	user.Password = "" // vazar senha aqui nao
 	c.JSON(http.StatusCreated, user)
 }
 
+// UpdateUser - Atualiza um usuário existente
 func UpdateUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
+	id := c.Param("id")
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	query := "UPDATE users SET name = $1, email = $2, username = $3 WHERE id = $4"
-	result, err := database.DB.Exec(query, user.Name, user.Email, user.User, id)
-
+	query := `UPDATE users SET name = $1, email = $2, username = $3 WHERE id = $4`
+	result, err := database.DB.Exec(query, user.Name, user.Email, user.Username, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar usuário"})
 		return
 	}
 
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
 		return
 	}
 
-	user.ID = id
+	// Buscar usuário atualizado
+	userID, _ := strconv.Atoi(id)
+	user.ID = userID
 	c.JSON(http.StatusOK, user)
 }
 
+// DeleteUser - Deleta um usuário
 func DeleteUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	id := c.Param("id")
+	query := `DELETE FROM users WHERE id = $1`
 
-	query := "DELETE FROM users WHERE id = $1"
 	result, err := database.DB.Exec(query, id)
-
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao deletar usuário"})
 		return
 	}
 
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusNoContent, nil)
 }
