@@ -113,8 +113,5 @@ coverage/
 # ====================
 # JMeter (Testes de Performance)
 # ====================
-*.jmx.bak
 jmeter.log
-*.jtl
-*.csv
 results/

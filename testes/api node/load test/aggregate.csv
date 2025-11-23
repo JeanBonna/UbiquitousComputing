@@ -1,0 +1,7 @@
+Label,# Samples,Average,Median,90% Line,95% Line,99% Line,Min,Max,Error %,Throughput,Received KB/sec,Sent KB/sec
+GET Users,50,16,15,20,23,45,10,45,0.000%,1.69999,60.43,0.20
+GET User by ID,50,3,4,5,5,6,2,6,100.000%,1.70242,0.46,0.20
+POST Create User,50,9,7,10,11,90,4,90,0.000%,1.70236,0.74,0.52
+PUT Update User,50,4,4,6,6,6,2,6,100.000%,1.70742,0.46,0.54
+DELETE User,50,4,4,6,6,7,2,7,100.000%,1.70748,0.46,0.31
+TOTAL,250,7,5,15,18,25,2,90,60.000%,8.49473,62.51,1.77
